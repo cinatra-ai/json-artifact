@@ -1,10 +1,10 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { JsonDocument, JsonPreview, JsonTree } from "../json-tree";
-import JsonArtifactDetail from "../renderers/detail";
-import JsonArtifactPreview from "../renderers/preview";
-import type { ArtifactRendererProps } from "../renderer-props";
+import { JsonDocument, JsonPreview, JsonTree } from "../src/json-tree";
+import JsonArtifactDetail from "../src/renderers/detail";
+import JsonArtifactPreview from "../src/renderers/preview";
+import type { ArtifactRendererProps } from "../src/renderer-props";
 
 function markup(node: Parameters<typeof renderToStaticMarkup>[0]): string {
   return renderToStaticMarkup(node);

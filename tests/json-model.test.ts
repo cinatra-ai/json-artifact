@@ -13,7 +13,7 @@ import {
   startsExpanded,
   summarize,
   togglePath,
-} from "../json-model";
+} from "../src/json-model";
 
 describe("safeParseJson", () => {
   it("parses valid JSON", () => {

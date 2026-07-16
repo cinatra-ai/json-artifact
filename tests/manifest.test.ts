@@ -2,9 +2,9 @@ import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import { jsonArtifactManifest } from "../index";
+import { jsonArtifactManifest } from "../src/index";
 
-const pkgUrl = new URL("../../package.json", import.meta.url);
+const pkgUrl = new URL("../package.json", import.meta.url);
 const pkg = JSON.parse(readFileSync(pkgUrl, "utf8")) as {
   name: string;
   cinatra: {
@@ -56,7 +56,7 @@ describe("package.json cinatra manifest", () => {
       // The entry is a package-relative, path-contained subpath that exists.
       expect(r.entry.startsWith("./"), slot).toBe(true);
       expect(r.entry.includes(".."), slot).toBe(false);
-      const abs = fileURLToPath(new URL(`../../${r.entry.slice(2)}`, import.meta.url));
+      const abs = fileURLToPath(new URL(`../${r.entry.slice(2)}`, import.meta.url));
       expect(existsSync(abs), `${slot} entry ${r.entry} exists`).toBe(true);
     }
   });
