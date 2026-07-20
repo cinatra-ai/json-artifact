@@ -20,6 +20,12 @@ const pkg = JSON.parse(readFileSync(pkgUrl, "utf8")) as {
         sdkAbiRange: string;
         renderers: Record<string, { entry: string; propsApiVersion: number; representations: string[] }>;
       };
+      objectTypes: Array<{
+        type: string;
+        claim: string;
+        dispositions: Record<string, unknown>;
+        schema: Record<string, unknown>;
+      }>;
     };
   };
 };
@@ -59,6 +65,22 @@ describe("package.json cinatra manifest", () => {
       const abs = fileURLToPath(new URL(`../${r.entry.slice(2)}`, import.meta.url));
       expect(existsSync(abs), `${slot} entry ${r.entry} exists`).toBe(true);
     }
+  });
+
+  it("declares exactly one dedicated objectTypes claim for the upload type map", () => {
+    const claims = pkg.cinatra.artifact.objectTypes;
+    expect(Array.isArray(claims)).toBe(true);
+    expect(claims).toHaveLength(1);
+    const claim = claims[0];
+    expect(claim.type).toBe("@cinatra-ai/json-artifact:artifact");
+    expect(claim.claim).toBe("dedicated");
+    expect(claim.dispositions).toEqual({
+      projection: "artifact-safe",
+      pinnable: false,
+      snapshotPolicy: "none",
+      sensitivity: "normal",
+    });
+    expect(claim.schema).toEqual({ type: "object" });
   });
 
   it("keeps the exported typed manifest in lock-step with package.json (no drift)", () => {
