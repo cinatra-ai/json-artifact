@@ -1,3 +1,5 @@
+"use client";
+
 // The `detail` slot renderer for application/json.
 //
 // Full artifact detail view: a collapsible, pretty-printed JSON tree over the

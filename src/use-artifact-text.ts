@@ -1,3 +1,5 @@
+"use client";
+
 // Shared client hook: fetch an artifact's authorized content as text.
 //
 // A v1 renderer receives host-authorized URLs (already access-checked) in its

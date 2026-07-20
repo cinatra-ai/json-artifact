@@ -1,3 +1,5 @@
+"use client";
+
 // The `preview` slot renderer for application/json.
 //
 // The neutral inline-preview capability consumed by in-core reuse sites: a

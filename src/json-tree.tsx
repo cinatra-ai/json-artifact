@@ -1,3 +1,5 @@
+"use client";
+
 // The collapsible, pretty-printed JSON tree viewer.
 //
 // A genuinely new renderer (there is no system base for application/json): it
