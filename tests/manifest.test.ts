@@ -54,7 +54,7 @@ describe("package.json cinatra manifest", () => {
   it("declares a v1 ui block with detail + preview renderers built against the host SDK", () => {
     const ui = pkg.cinatra.artifact.ui;
     expect(ui.abiVersion).toBe(1);
-    expect(ui.sdkAbiRange).toBe("^2.4.0");
+    expect(ui.sdkAbiRange).toBe("^2.5.0");
     expect(Object.keys(ui.renderers).sort()).toEqual(["detail", "preview"]);
     for (const [slot, r] of Object.entries(ui.renderers)) {
       expect(r.propsApiVersion, slot).toBe(1);
