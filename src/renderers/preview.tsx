@@ -3,16 +3,19 @@
 // The `preview` slot renderer for application/json.
 //
 // The neutral inline-preview capability consumed by in-core reuse sites: a
-// single legible line summarizing the document (top-level keys, item count, or
-// the primitive value), degrading to a raw snippet when the bytes are not JSON.
-// Never blank. Requests no host ports; renders only from the authorized props
-// snapshot.
+// single legible line summarizing the document the host projected onto these
+// props (top-level keys, item count, or the primitive value), degrading to a raw
+// snippet when the projected content is not JSON. Never blank.
+//
+// IT DRAWS FROM THE CONTENT CHANNEL AND FROM NOTHING ELSE — no request of its
+// own, on any road, so a card carrying this line inside a third-party
+// application shows the same line it shows on the artifact page.
 
 import { type CSSProperties, type ReactNode } from "react";
 
+import { contentFloorSummary, resolveArtifactTextView, type ArtifactTextView } from "../content-view";
 import { JsonPreview } from "../json-tree";
-import { type ArtifactRendererProps } from "../renderer-props";
-import { useArtifactText } from "../use-artifact-text";
+import { PROPS_API_VERSION, type ArtifactRendererProps } from "../renderer-props";
 
 const shellStyle: CSSProperties = {
   display: "flex",
@@ -31,34 +34,15 @@ const mutedStyle: CSSProperties = {
   textOverflow: "ellipsis",
 };
 
-const skeletonStyle: CSSProperties = {
-  height: "16px",
-  width: "160px",
-  borderRadius: "4px",
-  background: "var(--muted, #f3f4f6)",
-  opacity: 0.7,
-};
-
-function Body({ url }: { url: string | null }): ReactNode {
-  const state = useArtifactText(url);
-  switch (state.status) {
-    case "no-content":
-      return (
-        <span style={mutedStyle} data-json-preview-empty>
-          No JSON content
-        </span>
-      );
-    case "loading":
-      return <span style={skeletonStyle} aria-busy="true" data-json-preview-loading />;
-    case "error":
-      return (
-        <span style={mutedStyle} data-json-preview-error>
-          content unavailable
-        </span>
-      );
-    case "loaded":
-      return <JsonPreview text={state.text} />;
+function Body({ view }: { view: ArtifactTextView }): ReactNode {
+  if (view.kind === "floor") {
+    return (
+      <span style={mutedStyle} data-json-preview-floor={view.reason}>
+        {contentFloorSummary(view.reason)}
+      </span>
+    );
   }
+  return <JsonPreview text={view.text} />;
 }
 
 /**
@@ -66,10 +50,9 @@ function Body({ url }: { url: string | null }): ReactNode {
  * shared React singleton; owns no React root.
  */
 export default function JsonArtifactPreview(props: ArtifactRendererProps): ReactNode {
-  const url = props.urls.preview ?? props.urls.download;
   return (
-    <div style={shellStyle} data-json-artifact-preview>
-      <Body url={url} />
+    <div style={shellStyle} data-json-artifact-preview data-props-api-version={PROPS_API_VERSION}>
+      <Body view={resolveArtifactTextView(props)} />
     </div>
   );
 }

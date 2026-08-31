@@ -3,16 +3,27 @@
 // The `detail` slot renderer for application/json.
 //
 // Full artifact detail view: a collapsible, pretty-printed JSON tree over the
-// document's authorized bytes, with a lightweight header (title + download) and
-// a never-blank floor for every state — no content, loading, fetch error, and
-// malformed JSON (shown as raw bytes, never blank). Requests no host ports;
-// renders only from the authorized props snapshot.
+// document the host projected onto these props, with a lightweight header
+// (title + download) and a NAMED floor for every state the channel can report.
+//
+// IT DRAWS FROM THE CONTENT CHANNEL AND FROM NOTHING ELSE. The text arrives on
+// the snapshot, read from the pinned revision on the server and capped there —
+// this display makes no request of its own, on any road. That is what lets it
+// draw inside a third-party application, where a display reaching for bytes from
+// the browser carries no credential and paints an empty plate.
+//
+// NEVER BLANK, NEVER THROWN: content it cannot draw becomes a named floor.
 
 import { type CSSProperties, type ReactNode } from "react";
 
+import {
+  byteDownloadHref,
+  contentFloorMessage,
+  resolveArtifactTextView,
+  type ArtifactTextView,
+} from "../content-view";
 import { JsonDocument } from "../json-tree";
-import { type ArtifactRendererProps } from "../renderer-props";
-import { useArtifactText } from "../use-artifact-text";
+import { PROPS_API_VERSION, type ArtifactRendererProps } from "../renderer-props";
 
 const wrapStyle: CSSProperties = {
   display: "flex",
@@ -55,33 +66,24 @@ const noticeStyle: CSSProperties = {
   padding: "8px 0",
 };
 
-const skeletonStyle: CSSProperties = {
-  height: "72px",
-  borderRadius: "6px",
-  background: "var(--muted, #f3f4f6)",
-  opacity: 0.7,
-};
-
-function Body({ url }: { url: string | null }): ReactNode {
-  const state = useArtifactText(url);
-  switch (state.status) {
-    case "no-content":
-      return (
-        <div style={noticeStyle} data-json-detail-empty>
-          No JSON content is available for this artifact.
-        </div>
-      );
-    case "loading":
-      return <div style={skeletonStyle} aria-busy="true" data-json-detail-loading />;
-    case "error":
-      return (
-        <div style={noticeStyle} data-json-detail-error>
-          {state.message}.
-        </div>
-      );
-    case "loaded":
-      return <JsonDocument text={state.text} />;
+function Body({ view }: { view: ArtifactTextView }): ReactNode {
+  if (view.kind === "floor") {
+    return (
+      <div style={noticeStyle} data-json-detail-floor={view.reason}>
+        {contentFloorMessage(view.reason)}
+      </div>
+    );
   }
+  return (
+    <>
+      <JsonDocument text={view.text} />
+      {view.truncated ? (
+        <p style={noticeStyle} data-json-detail-truncated>
+          {`Showing the first ${view.projectedByteLength.toLocaleString("en-US")} of ${view.byteLength.toLocaleString("en-US")} bytes. Download it to read the whole of it.`}
+        </p>
+      ) : null}
+    </>
+  );
 }
 
 /**
@@ -89,11 +91,11 @@ function Body({ url }: { url: string | null }): ReactNode {
  * with the shared React singleton; it owns no React root.
  */
 export default function JsonArtifactDetail(props: ArtifactRendererProps): ReactNode {
-  const url = props.urls.preview ?? props.urls.download;
-  const title = props.artifact.title ?? "JSON document";
-  const download = props.actions.download ?? props.urls.download;
+  const view = resolveArtifactTextView(props);
+  const title = props?.artifact?.title ?? "JSON document";
+  const download = byteDownloadHref(props);
   return (
-    <div style={wrapStyle} data-json-artifact-detail>
+    <div style={wrapStyle} data-json-artifact-detail data-props-api-version={PROPS_API_VERSION}>
       <div style={headerStyle}>
         <p style={titleStyle} title={title}>
           {title}
@@ -104,7 +106,7 @@ export default function JsonArtifactDetail(props: ArtifactRendererProps): ReactN
           </a>
         ) : null}
       </div>
-      <Body url={url} />
+      <Body view={view} />
     </div>
   );
 }
