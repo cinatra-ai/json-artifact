@@ -57,7 +57,7 @@ describe("package.json cinatra manifest", () => {
     expect(ui.sdkAbiRange).toBe("^2.5.0");
     expect(Object.keys(ui.renderers).sort()).toEqual(["detail", "preview"]);
     for (const [slot, r] of Object.entries(ui.renderers)) {
-      expect(r.propsApiVersion, slot).toBe(1);
+      expect(r.propsApiVersion, slot).toBe(2);
       expect(r.representations, slot).toEqual(["application/json"]);
       // The entry is a package-relative, path-contained subpath that exists.
       expect(r.entry.startsWith("./"), slot).toBe(true);

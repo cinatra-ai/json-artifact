@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { JsonDocument, JsonPreview, JsonTree } from "../src/json-tree";
 import JsonArtifactDetail from "../src/renderers/detail";
 import JsonArtifactPreview from "../src/renderers/preview";
-import type { ArtifactRendererProps } from "../src/renderer-props";
+import { noContent, props, textContent } from "./props-fixture";
 
 function markup(node: Parameters<typeof renderToStaticMarkup>[0]): string {
   return renderToStaticMarkup(node);
@@ -80,43 +80,35 @@ describe("JsonPreview (compact, never-blank)", () => {
   });
 });
 
-function baseProps(overrides: Partial<ArtifactRendererProps["urls"]>): ArtifactRendererProps {
-  return {
-    propsApiVersion: 1,
-    artifact: {
-      id: "art_1",
-      title: "config.json",
-      objectType: "@cinatra-ai/objects:object",
-      mime: "application/json",
-      size: 128,
-      createdAt: "2026-01-01T00:00:00.000Z",
-      updatedAt: "2026-01-01T00:00:00.000Z",
-      ownerLevel: "workspace",
-      visibility: "workspace",
-      sourceUrl: null,
-    },
-    representation: { revisionId: "rev_1", mime: "application/json" },
-    urls: { preview: null, download: null, ...overrides },
-    identity: { kind: "extension", extension: "@cinatra-ai/json-artifact", basis: "mime", selectable: true },
-    actions: { download: null, openInSource: null },
-  };
-}
-
 describe("slot renderers (default exports)", () => {
-  it("detail renders a no-content floor synchronously when no URL is authorized", () => {
-    const html = markup(<JsonArtifactDetail {...baseProps({})} />);
-    expect(html).toContain("No JSON content is available");
-    expect(html).toContain("config.json"); // the header title still renders
+  const DOCUMENT = '{"alpha":1}';
+
+  it("detail draws the projected document, with the header title beside it", () => {
+    const html = markup(<JsonArtifactDetail {...props(textContent(DOCUMENT))} />);
+    expect(html).toContain("alpha");
+    expect(html).toContain("config.json");
   });
 
-  it("detail renders a bounded skeleton (never blank) while content loads", () => {
-    const html = markup(<JsonArtifactDetail {...baseProps({ preview: "/api/artifacts/art_1/content" })} />);
-    expect(html).toContain("aria-busy");
-    expect(html.length).toBeGreaterThan(0);
+  it("detail floors, named and never blank, when the channel has nothing to give it", () => {
+    const html = markup(<JsonArtifactDetail {...props(noContent("absent"))} />);
+    expect(html).toContain('data-json-detail-floor="content-absent"');
+    expect(html).toContain("config.json");
+    expect(html.replace(/<[^>]*>/g, "").trim().length).toBeGreaterThan(0);
   });
 
-  it("preview renders a no-content state synchronously when no URL is authorized", () => {
-    expect(markup(<JsonArtifactPreview {...baseProps({})} />)).toContain("No JSON content");
+  it("preview draws a summary of the projected document", () => {
+    expect(markup(<JsonArtifactPreview {...props(textContent(DOCUMENT))} />)).toContain("alpha");
+  });
+
+  it("preview floors, named and never blank, when the channel has nothing to give it", () => {
+    const html = markup(<JsonArtifactPreview {...props(noContent("absent"))} />);
+    expect(html).toContain('data-json-preview-floor="content-absent"');
+    expect(html.replace(/<[^>]*>/g, "").trim().length).toBeGreaterThan(0);
+  });
+
+  it("neither slot draws a loading state — there is nothing to wait for", () => {
+    expect(markup(<JsonArtifactDetail {...props(textContent(DOCUMENT))} />)).not.toContain("aria-busy");
+    expect(markup(<JsonArtifactPreview {...props(textContent(DOCUMENT))} />)).not.toContain("aria-busy");
   });
 
   it("both default exports are React components (mountable functions)", () => {
