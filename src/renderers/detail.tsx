@@ -3,9 +3,16 @@
 // The `detail` slot renderer for application/json.
 //
 // Full artifact detail view: a collapsible, pretty-printed JSON tree over the
-// document the host projected onto these props, with a lightweight header
-// (title + download) and a NAMED floor for every state the channel can report.
+// document the host projected onto these props, and a NAMED floor for every
+// state the channel can report.
 //
+// NO HEADER STRIP, AND NO DOWNLOAD INSIDE THE PANEL (the review drawing §V.2,
+// §XI). "It has no tabs and nothing else to put in a header, so it carries no
+// header strip at all." This display drew one — the file's name repeated from
+// the page's own header, with a download control beside it — and a proof round
+// graded it as a second header the drawing does not draw and a control on a
+// surface the drawing gives none. The panel is the work, and nothing above it.
+
 // IT DRAWS FROM THE CONTENT CHANNEL AND FROM NOTHING ELSE. The text arrives on
 // the snapshot, read from the pinned revision on the server and capped there —
 // this display makes no request of its own, on any road. That is what lets it
@@ -17,7 +24,6 @@
 import { type CSSProperties, type ReactNode } from "react";
 
 import {
-  byteDownloadHref,
   contentFloorMessage,
   resolveArtifactTextView,
   type ArtifactTextView,
@@ -30,32 +36,6 @@ const wrapStyle: CSSProperties = {
   flexDirection: "column",
   gap: "8px",
   minWidth: 0,
-};
-
-const headerStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "12px",
-  flexWrap: "wrap",
-};
-
-const titleStyle: CSSProperties = {
-  fontSize: "13px",
-  fontWeight: 600,
-  color: "var(--foreground, #111827)",
-  margin: 0,
-  minWidth: 0,
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-};
-
-const linkStyle: CSSProperties = {
-  fontSize: "12px",
-  color: "var(--primary, #2563eb)",
-  textDecoration: "none",
-  flex: "none",
 };
 
 const noticeStyle: CSSProperties = {
@@ -79,7 +59,7 @@ function Body({ view }: { view: ArtifactTextView }): ReactNode {
       <JsonDocument text={view.text} />
       {view.truncated ? (
         <p style={noticeStyle} data-json-detail-truncated>
-          {`Showing the first ${view.projectedByteLength.toLocaleString("en-US")} of ${view.byteLength.toLocaleString("en-US")} bytes. Download it to read the whole of it.`}
+          {`Showing the first ${view.projectedByteLength.toLocaleString("en-US")} of ${view.byteLength.toLocaleString("en-US")} bytes.`}
         </p>
       ) : null}
     </>
@@ -92,20 +72,8 @@ function Body({ view }: { view: ArtifactTextView }): ReactNode {
  */
 export default function JsonArtifactDetail(props: ArtifactRendererProps): ReactNode {
   const view = resolveArtifactTextView(props);
-  const title = props?.artifact?.title ?? "JSON document";
-  const download = byteDownloadHref(props);
   return (
     <div style={wrapStyle} data-json-artifact-detail data-props-api-version={PROPS_API_VERSION}>
-      <div style={headerStyle}>
-        <p style={titleStyle} title={title}>
-          {title}
-        </p>
-        {download ? (
-          <a style={linkStyle} href={download} download data-json-download>
-            Download
-          </a>
-        ) : null}
-      </div>
       <Body view={view} />
     </div>
   );

@@ -83,16 +83,20 @@ describe("JsonPreview (compact, never-blank)", () => {
 describe("slot renderers (default exports)", () => {
   const DOCUMENT = '{"alpha":1}';
 
-  it("detail draws the projected document, with the header title beside it", () => {
+  // THE PANEL IS THE WORK, AND NOTHING ABOVE IT (the review drawing §V.2: a
+  // kind with nothing to put in a header "carries no header strip at all"). This
+  // used to pin the file name repeated inside the panel; the artifact page's own
+  // header names the file, and a proof round graded the repetition as a second
+  // header the drawing does not draw.
+  it("detail draws the projected document, and repeats no file name above it", () => {
     const html = markup(<JsonArtifactDetail {...props(textContent(DOCUMENT))} />);
     expect(html).toContain("alpha");
-    expect(html).toContain("config.json");
+    expect(html).not.toContain("config.json");
   });
 
   it("detail floors, named and never blank, when the channel has nothing to give it", () => {
     const html = markup(<JsonArtifactDetail {...props(noContent("absent"))} />);
     expect(html).toContain('data-json-detail-floor="content-absent"');
-    expect(html).toContain("config.json");
     expect(html.replace(/<[^>]*>/g, "").trim().length).toBeGreaterThan(0);
   });
 

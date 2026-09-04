@@ -70,9 +70,16 @@ describe("the detail slot draws the projected text", () => {
     expect(html).not.toContain("src=");
   });
 
-  it("offers the byte reference as the download address, which is the one an island reader can use", () => {
+  // NO ADDRESS AT ALL, ON EITHER SURFACE. The panel used to offer a download,
+  // so this pinned that the offered address was the island one. The drawing gives
+  // this kind no download inside the panel (§V.2), so what is pinned now is the
+  // stronger reading the content channel was built for: the document is drawn
+  // from the props on the island, and the display reaches for nothing.
+  it("reaches for no byte address on the island — the document came on the props", () => {
     const html = renderToStaticMarkup(<JsonArtifactDetail {...islandProps(textContent(DOCUMENT))} />);
-    expect(html).toContain("/api/lifecycle-views/artifact-bytes");
+    expect(html).toContain("alpha");
+    expect(html).not.toContain("/api/lifecycle-views/artifact-bytes");
+    expect(html).not.toMatch(/<a\b/);
   });
 
   it("says how much of a truncated document it is showing", () => {
