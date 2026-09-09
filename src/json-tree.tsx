@@ -1,27 +1,26 @@
 "use client";
 
-// The collapsible, pretty-printed JSON tree viewer.
+// The pretty-printed JSON tree viewer.
 //
 // A genuinely new renderer (there is no system base for application/json): it
-// turns a JSON document into an expand/collapse tree with type-colored leaves,
-// child counts on collapsed containers, and a never-blank floor for every
-// degraded state. Colors resolve to the host's shared design tokens (CSS
-// custom properties) in-realm, with self-contained fallbacks so the component
-// also renders correctly outside the host.
+// turns a JSON document into a fully expanded tree with type-colored leaves and
+// a never-blank floor for every degraded state. No drawing sentence gives the
+// value tree a per-node disclosure control, so it draws none: every container is
+// open, and reintroducing collapse needs a ratified drawing change first.
+// Colors resolve to the host's shared design tokens (CSS custom properties)
+// in-realm, with self-contained fallbacks so the component also renders
+// correctly outside the host.
 
-import { useCallback, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { useMemo, type CSSProperties, type ReactNode } from "react";
 
 import {
   childCount,
-  childPath,
   classifyJson,
   entriesOf,
   formatPrimitive,
   isContainer,
-  isExpanded,
   safeParseJson,
   summarize,
-  togglePath,
   type JsonKind,
 } from "./json-model";
 
@@ -64,32 +63,14 @@ const rowStyle: CSSProperties = {
 
 const keyStyle: CSSProperties = { color: "var(--json-key, var(--foreground, #111827))", fontWeight: 500 };
 const punctStyle: CSSProperties = { color: "var(--muted-foreground, #6b7280)" };
-const countStyle: CSSProperties = { color: "var(--muted-foreground, #9ca3af)", fontStyle: "italic" };
-
-const toggleStyle: CSSProperties = {
-  cursor: "pointer",
-  border: "none",
-  background: "transparent",
-  padding: 0,
-  margin: 0,
-  width: "1em",
-  color: "var(--muted-foreground, #6b7280)",
-  font: "inherit",
-  lineHeight: "inherit",
-  textAlign: "left",
-};
 
 // --- one node ------------------------------------------------------------
 
 interface NodeProps {
   value: unknown;
-  path: string;
   depth: number;
   /** The property/index label, or null for the root. */
   label: string | null;
-  toggled: ReadonlySet<string>;
-  onToggle: (path: string) => void;
-  openDepth: number;
 }
 
 function KeyLabel({ label }: { label: string | null }): ReactNode {
@@ -103,10 +84,10 @@ function KeyLabel({ label }: { label: string | null }): ReactNode {
 }
 
 function JsonNode(props: NodeProps): ReactNode {
-  const { value, path, depth, label, toggled, onToggle, openDepth } = props;
+  const { value, depth, label } = props;
   const indent: CSSProperties = { paddingLeft: `${depth * 14}px` };
 
-  // Primitive leaf — never expands.
+  // Primitive leaf.
   if (!isContainer(value)) {
     const kind = classifyJson(value);
     return (
@@ -123,13 +104,12 @@ function JsonNode(props: NodeProps): ReactNode {
   }
 
   const kind = classifyJson(value);
-  const open = isExpanded({ path, depth, toggled, openDepth });
   const entries = entriesOf(value);
   const n = childCount(value);
   const openBrace = kind === "array" ? "[" : "{";
   const closeBrace = kind === "array" ? "]" : "}";
 
-  // Empty container — render inline, no toggle.
+  // Empty container — render inline.
   if (n === 0) {
     return (
       <div style={{ ...rowStyle, ...indent }} data-json-kind={kind} data-json-empty>
@@ -145,75 +125,39 @@ function JsonNode(props: NodeProps): ReactNode {
     );
   }
 
+  // A non-empty container, drawn open, keeping the same one-character gutter the
+  // leaf rows keep so the columns line up exactly as before, minus the control.
   return (
-    <div data-json-kind={kind} data-json-open={open ? "true" : "false"}>
+    <div data-json-kind={kind}>
       <div style={{ ...rowStyle, ...indent }}>
-        <button
-          type="button"
-          style={toggleStyle}
-          aria-expanded={open}
-          aria-label={open ? `Collapse ${label ?? "root"}` : `Expand ${label ?? "root"}`}
-          onClick={() => onToggle(path)}
-        >
-          {open ? "▾" : "▸"}
-        </button>
+        <span style={{ width: "1em", flex: "none" }} aria-hidden="true" />
         <span>
           <KeyLabel label={label} />
           <span style={punctStyle}>{openBrace}</span>
-          {open ? null : (
-            <>
-              {" "}
-              <span style={countStyle}>{summarize(value)}</span> <span style={punctStyle}>{closeBrace}</span>
-            </>
-          )}
         </span>
       </div>
-      {open ? (
-        <>
-          {entries.map((e) => (
-            <JsonNode
-              key={e.key}
-              value={e.value}
-              path={childPath(path, e.key)}
-              depth={depth + 1}
-              label={e.key}
-              toggled={toggled}
-              onToggle={onToggle}
-              openDepth={openDepth}
-            />
-          ))}
-          <div style={{ ...rowStyle, ...indent }}>
-            <span style={{ width: "1em", flex: "none" }} aria-hidden="true" />
-            <span style={punctStyle}>{closeBrace}</span>
-          </div>
-        </>
-      ) : null}
+      {entries.map((e) => (
+        <JsonNode key={e.key} value={e.value} depth={depth + 1} label={e.key} />
+      ))}
+      <div style={{ ...rowStyle, ...indent }}>
+        <span style={{ width: "1em", flex: "none" }} aria-hidden="true" />
+        <span style={punctStyle}>{closeBrace}</span>
+      </div>
     </div>
   );
 }
 
-// --- the interactive tree ------------------------------------------------
+// --- the tree ------------------------------------------------------------
 
 /**
- * The collapsible tree over an already-parsed JSON value. Expansion state is a
- * small toggle-delta over the depth-based auto-collapse policy.
+ * The tree over an already-parsed JSON value. Every container is expanded: no
+ * drawing sentence gives the value tree a per-node disclosure control, so the
+ * tree holds no expansion state and offers nothing to toggle.
  */
-export function JsonTree({ value, openDepth = 2 }: { value: unknown; openDepth?: number }): ReactNode {
-  const [toggled, setToggled] = useState<ReadonlySet<string>>(() => new Set<string>());
-  const onToggle = useCallback((path: string) => {
-    setToggled((prev) => togglePath(prev, path));
-  }, []);
+export function JsonTree({ value }: { value: unknown }): ReactNode {
   return (
     <div style={rootStyle} data-json-tree>
-      <JsonNode
-        value={value}
-        path=""
-        depth={0}
-        label={null}
-        toggled={toggled}
-        onToggle={onToggle}
-        openDepth={openDepth}
-      />
+      <JsonNode value={value} depth={0} label={null} />
     </div>
   );
 }
@@ -240,15 +184,15 @@ const rawStyle: CSSProperties = {
 
 /**
  * Render a JSON DOCUMENT (raw text) to a tree — degrading, never blank:
- *  - valid JSON  → the collapsible tree;
+ *  - valid JSON  → the tree;
  *  - malformed   → the raw bytes verbatim + a one-line diagnostic;
  *  - empty       → an explicit empty-state.
  * The safe-parse never throws, so this component cannot blank the host page.
  */
-export function JsonDocument({ text, openDepth = 2 }: { text: string; openDepth?: number }): ReactNode {
+export function JsonDocument({ text }: { text: string }): ReactNode {
   const parsed = useMemo(() => safeParseJson(text), [text]);
   if (parsed.ok) {
-    return <JsonTree value={parsed.value} openDepth={openDepth} />;
+    return <JsonTree value={parsed.value} />;
   }
   if (parsed.error === "empty document") {
     return (

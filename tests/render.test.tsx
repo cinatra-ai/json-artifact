@@ -24,16 +24,71 @@ describe("JsonTree", () => {
     expect(markup(<JsonTree value={[]} />)).toContain("[");
   });
 
-  it("collapses nodes deeper than the open depth, showing a child count", () => {
-    const value = { outer: { inner: { secret: "buried" } } };
-    // openDepth 0: only the root is expanded; depth-1 "outer" is collapsed.
-    const collapsed = markup(<JsonTree value={value} openDepth={0} />);
-    expect(collapsed).toContain("outer");
-    expect(collapsed).toContain("key"); // the collapsed summary "{ 1 key }"
-    expect(collapsed).not.toContain("buried"); // the buried leaf is not rendered
-    // A generous open depth expands everything.
-    const expanded = markup(<JsonTree value={value} openDepth={10} />);
-    expect(expanded).toContain("buried");
+  // A nested fixture of non-empty objects AND arrays, nested deeper than the two
+  // levels the tree used to open by itself, so any surviving collapse policy
+  // would hide part of it.
+  const NESTED = {
+    name: "cinatra",
+    meta: { tags: ["alpha", "beta"], nested: { deep: { deeper: "buried" } } },
+    items: [{ id: 1 }, { id: 2 }],
+    flags: { on: true, off: false, none: null },
+  };
+
+  it("renders every key and value of a nested fixture and emits no disclosure control", () => {
+    const html = markup(<JsonTree value={NESTED} />);
+    const keys = [
+      "name",
+      "meta",
+      "tags",
+      "nested",
+      "deep",
+      "deeper",
+      "items",
+      "id",
+      "flags",
+      "on",
+      "off",
+      "none",
+      "0",
+      "1",
+    ];
+    for (const key of keys) expect(html).toContain(`>${key}</span>`);
+    const values = [
+      "&quot;cinatra&quot;",
+      "&quot;alpha&quot;",
+      "&quot;beta&quot;",
+      "&quot;buried&quot;",
+      ">1</span>",
+      ">2</span>",
+      ">true</span>",
+      ">false</span>",
+      ">null</span>",
+    ];
+    for (const value of values) expect(html).toContain(value);
+    expect(html).not.toContain("<button");
+    expect(html).not.toContain("aria-expanded");
+    expect(html).not.toContain("\u25BE"); // the down-pointing triangle
+    expect(html).not.toContain("\u25B8"); // the right-pointing triangle
+  });
+
+  it("draws no collapsed child-count summary, and keeps punctuation, indentation and leaf colors", () => {
+    const html = markup(<JsonTree value={NESTED} />);
+    // No collapsed summary survives at any depth.
+    expect(html).not.toContain("key }");
+    expect(html).not.toContain("keys }");
+    expect(html).not.toContain("item ]");
+    expect(html).not.toContain("items ]");
+    // Punctuation, indentation and the palette tokens are untouched.
+    expect(html).toContain(">{</span>");
+    expect(html).toContain(">}</span>");
+    expect(html).toContain(">[</span>");
+    expect(html).toContain(">]</span>");
+    expect(html).toContain(">: </span>");
+    expect(html).toContain("padding-left:14px");
+    expect(html).toContain("var(--json-string");
+    expect(html).toContain("var(--json-number");
+    expect(html).toContain("var(--json-boolean");
+    expect(html).toContain("var(--json-null");
   });
 
   it("renders a bare primitive root", () => {
