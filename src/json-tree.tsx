@@ -45,20 +45,39 @@ function leafColor(kind: JsonKind): string {
   }
 }
 
+// THE ROWS SCROLL INSIDE THIS BOX, AND THE BOX NEVER WIDENS THE PAGE.
+//
+// A wide representation scrolls inside its own container rather than widening
+// the page (the review drawing section III). Declaring `overflow-x: auto` is
+// not enough on its own: the element also has to be BOUNDED by its parent, or a
+// flex or grid chain stretches it to its own content and an ancestor clips the
+// glyphs instead (measured inside the host review island, where every value
+// tree row was cut mid-word at the panel's content edge). So `min-width: 0`
+// keeps a flex or grid chain from forcing this box wider than the parent gives
+// it, `max-width: 100%` keeps it inside that parent, and the rows below are
+// `max-content` wide so a wide row becomes this box's own scrollable overflow.
 const rootStyle: CSSProperties = {
   fontFamily: MONO,
   fontSize: "13px",
   lineHeight: 1.6,
   color: "var(--foreground, #111827)",
   overflowX: "auto",
+  minWidth: 0,
+  maxWidth: "100%",
   padding: "2px 0",
 };
 
+// A row is as wide as its own text and no narrower than the box it sits in:
+// `max-content` is what makes a wide row overflow the scroll container above
+// (which then scrolls it) instead of being sliced at that container's content
+// edge, and `min-width: 100%` keeps a short row spanning the full measure.
 const rowStyle: CSSProperties = {
   display: "flex",
   alignItems: "flex-start",
   gap: "4px",
   whiteSpace: "pre",
+  width: "max-content",
+  minWidth: "100%",
 };
 
 const keyStyle: CSSProperties = { color: "var(--json-key, var(--foreground, #111827))", fontWeight: 500 };
