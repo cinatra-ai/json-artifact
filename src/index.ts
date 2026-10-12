@@ -65,6 +65,7 @@ export interface JsonArtifactManifest {
     renderers: {
       detail: { entry: string; propsApiVersion: number; representations: string[] };
       preview: { entry: string; propsApiVersion: number; representations: string[] };
+      listRow: { entry: string; propsApiVersion: number };
     };
   };
 }
@@ -84,6 +85,10 @@ export const jsonArtifactManifest: JsonArtifactManifest = {
         entry: "./src/renderers/preview.tsx",
         propsApiVersion: 2,
         representations: ["application/json"],
+      },
+      listRow: {
+        entry: "./src/renderers/list-row.tsx",
+        propsApiVersion: 1,
       },
     },
   },

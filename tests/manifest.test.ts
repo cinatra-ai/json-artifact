@@ -46,7 +46,7 @@ describe("package.json cinatra manifest", () => {
     const claimed = new Set<string>();
     for (const m of pkg.cinatra.artifact.accepts.file.mimeTypes) claimed.add(m);
     for (const r of Object.values(pkg.cinatra.artifact.ui.renderers)) {
-      for (const m of r.representations) claimed.add(m);
+      for (const m of r.representations ?? []) claimed.add(m);
     }
     expect([...claimed]).toEqual(["application/json"]);
   });
@@ -55,8 +55,8 @@ describe("package.json cinatra manifest", () => {
     const ui = pkg.cinatra.artifact.ui;
     expect(ui.abiVersion).toBe(1);
     expect(ui.sdkAbiRange).toBe("^2.5.0");
-    expect(Object.keys(ui.renderers).sort()).toEqual(["detail", "preview"]);
-    for (const [slot, r] of Object.entries(ui.renderers)) {
+    expect(Object.keys(ui.renderers).sort()).toEqual(["detail", "listRow", "preview"]);
+    for (const [slot, r] of Object.entries(ui.renderers).filter(([name]) => name !== "listRow")) {
       expect(r.propsApiVersion, slot).toBe(2);
       expect(r.representations, slot).toEqual(["application/json"]);
       // The entry is a package-relative, path-contained subpath that exists.
